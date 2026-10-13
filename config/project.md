@@ -2,11 +2,7 @@
 
 ツールが `key: value` の行を読み取ります。行の形式は変えないでください。
 
-## ソースルート
-pom.xml があるフォルダを、絶対パスで書きます（区切りは `/`）。ソースはコピーせず、Eclipse のワークスペースにある実物を参照します。
-同じフォルダを、VS Code のワークスペースの2つ目のフォルダにも登録してください（`templates/dev-agents.code-workspace`）。
-
-source_root: C:/pleiades/2026-06/workspace/<PJ名>
+> 対象PJのソースルートは、ここではなく、パッケージ直下の `dev-agents.code-workspace`（name が `"source"` のフォルダの `path`）に書きます。
 
 ## 調査の対象外
 カンマ区切りで、ソースルートからのフォルダ名を書きます。

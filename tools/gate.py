@@ -131,8 +131,8 @@ def check(step: str, feature: str | None, iu: str | None, mode: str | None) -> s
     sr = C.source_root()
 
     if step not in ("retrospect",):
-        _require(sr is not None and sr.exists(),
-                 "config/project.md の source_root が未設定か、フォルダが存在しません")
+        problem = C.source_root_problem()
+        _require(not problem, problem)
 
     if gate_kind != "profile":
         prof = C.load_status(C.PROFILE_FEATURE)
@@ -403,6 +403,12 @@ def next_action(feature: str) -> str:
             f"- 状況: ステップ `{(cur.get('step', '') + ' ' + cur.get('args', '')).strip()}` の完了処理が済んでいません",
             "- 実行するコマンド: `python tools/check_artifact.py --finish`",
         ])
+
+    problem = C.source_root_problem()
+    if problem:
+        return _human("対象PJのソースルートが設定されていません", [f"templates/{C.WORKSPACE_FILE}"],
+                      [problem, f"VS Code で {C.WORKSPACE_FILE} を開き直す（ファイル → ファイルでワークスペースを開く）",
+                       "もう一度、進行役に依頼する"])
 
     # ⓪ プロジェクト把握
     prof_st = C.load_status(C.PROFILE_FEATURE)

@@ -13,8 +13,5 @@ knowledge/project_profile.md
 knowledge/common_components.md
 knowledge/metrics.csv
 
-# ワークスペースファイル（ソースルートのパスを含む）
-/*.code-workspace
-
 __pycache__/
 *.pyc

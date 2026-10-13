@@ -82,27 +82,112 @@ def is_under(path: str | os.PathLike, base: str | os.PathLike) -> bool:
 
 
 # ---------------------------------------------------------------- 設定
+WORKSPACE_FILE = "dev-agents.code-workspace"
+SOURCE_FOLDER_NAME = "source"
+
+
 def load_config() -> dict:
-    """config/project.md の `key: value` 行を読む。"""
-    cfg = {"source_root": "", "exclude": []}
+    """config/project.md の `key: value` 行を読む（調査の対象外など）。"""
+    cfg = {"exclude": []}
     path = root() / "config" / "project.md"
     if not path.exists():
         return cfg
     for line in path.read_text(encoding="utf-8").splitlines():
-        m = re.match(r"^\s*(source_root|exclude)\s*:\s*(.*?)\s*$", line)
-        if not m:
-            continue
-        key, val = m.group(1), m.group(2)
-        if key == "exclude":
-            cfg["exclude"] = [v.strip() for v in val.split(",") if v.strip()]
-        else:
-            cfg[key] = val
+        m = re.match(r"^\s*(exclude)\s*:\s*(.*?)\s*$", line)
+        if m:
+            cfg["exclude"] = [v.strip() for v in m.group(2).split(",") if v.strip()]
     return cfg
 
 
+def _strip_jsonc(text: str) -> str:
+    """JSONC（コメントと末尾のカンマを含む JSON）を JSON にする。文字列の中は触らない。"""
+    out, i, n, in_str = [], 0, len(text), False
+    while i < n:
+        c = text[i]
+        if in_str:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_str = False
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+            out.append(c)
+            i += 1
+        elif text.startswith("//", i):
+            j = text.find("\n", i)
+            i = n if j < 0 else j
+        elif text.startswith("/*", i):
+            j = text.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+        else:
+            out.append(c)
+            i += 1
+    return re.sub(r",(\s*[}\]])", r"\1", "".join(out))
+
+
+def workspace_file() -> Path | None:
+    """パッケージ直下のワークスペースファイル（ソースルートを書く唯一の場所）。"""
+    p = root() / WORKSPACE_FILE
+    if p.is_file():
+        return p
+    others = sorted(root().glob("*.code-workspace"))
+    return others[0] if len(others) == 1 else None
+
+
+def source_root_problem() -> str:
+    """ソースルートが使えない理由（使えるなら ''）。"""
+    ws = workspace_file()
+    if ws is None:
+        return (f"ワークスペースファイル（{WORKSPACE_FILE}）がパッケージ直下にありません。"
+                f"templates/{WORKSPACE_FILE} をコピーし、name が \"{SOURCE_FOLDER_NAME}\" のフォルダの path に"
+                "対象PJのソースルート（pom.xml があるフォルダ）を書いてください")
+    raw = _source_folder_path(ws)
+    if raw is None:
+        return (f"{ws.name} の folders に、name が \"{SOURCE_FOLDER_NAME}\" のフォルダ（対象PJのソースルート）が"
+                "ありません")
+    if "<" in raw or ">" in raw:
+        return f"{ws.name} の \"{SOURCE_FOLDER_NAME}\" の path がひな形のままです（{raw}）。ソースルートに書き換えてください"
+    p = _resolve_ws_path(ws, raw)
+    if not p.is_dir():
+        return f"{ws.name} の \"{SOURCE_FOLDER_NAME}\" の path のフォルダが存在しません: {raw}"
+    return ""
+
+
+def _source_folder_path(ws: Path) -> str | None:
+    try:
+        data = json.loads(_strip_jsonc(ws.read_text(encoding="utf-8-sig")))
+    except (OSError, json.JSONDecodeError):
+        return None
+    folders = [f for f in data.get("folders", []) if isinstance(f, dict) and isinstance(f.get("path"), str)]
+    named = [f for f in folders if f.get("name") == SOURCE_FOLDER_NAME]
+    if named:
+        return named[0]["path"]
+    # name が付いていない場合は、パッケージ以外の最初のフォルダ
+    for f in folders:
+        if norm(_resolve_ws_path(ws, f["path"])) != norm(root()):
+            return f["path"]
+    return None
+
+
+def _resolve_ws_path(ws: Path, raw: str) -> Path:
+    p = Path(os.path.expandvars(os.path.expanduser(raw)))
+    return p if p.is_absolute() else (ws.parent / p)
+
+
 def source_root() -> Path | None:
-    sr = load_config().get("source_root")
-    return Path(sr) if sr else None
+    """対象PJのソースルート。ワークスペースファイルの "source" フォルダから読む。"""
+    ws = workspace_file()
+    if ws is None:
+        return None
+    raw = _source_folder_path(ws)
+    if raw is None or "<" in raw:
+        return None
+    return Path(os.path.abspath(str(_resolve_ws_path(ws, raw))))
 
 
 # ---------------------------------------------------------------- 実行中コンテキスト

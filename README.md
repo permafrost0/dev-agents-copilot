@@ -13,13 +13,12 @@ AI は「作成役 → 中立なレビュー役」の順に動き、各段階の
 
 ## 準備（初回のみ）
 1. このフォルダ一式を、作業用のフォルダに置く
-2. `config/project.md` の `source_root` に、対象PJのソースルート（pom.xml があるフォルダ。Eclipse のワークスペース内の実物）を書く
-3. `templates/dev-agents.code-workspace` をこのフォルダ直下にコピーし、2つ目の `path` を同じソースルートに書き換える
-4. VS Code で「ファイル → ファイルでワークスペースを開く」から、コピーした `dev-agents.code-workspace` を開く
-   - 1つ目のフォルダは必ずこのパッケージにする（スクリプトとフックの実行場所になる）
+2. このフォルダ直下の `dev-agents.code-workspace` を開き、`"name": "source"` の `path` に、対象PJのソースルート（pom.xml があるフォルダ。Eclipse のワークスペース内の実物）を書く。**ソースルートを書くのはここだけ**です（ツールもここを読みます）
+3. VS Code で「ファイル → ファイルでワークスペースを開く」から、`dev-agents.code-workspace` を開く
+   - 1つ目のフォルダはこのパッケージのままにする（スクリプトとフックの実行場所になる）
    - 「このフォルダの作成者を信頼する」を選ぶ（フックを有効にするため）
-5. `input/設計方針/` に、設計方針ドキュメントやコーディング規約を置く
-6. Copilot Chat を開き、エージェントモードで `/proceed _profile` を実行する（⓪プロジェクト把握）
+4. `input/設計方針/` に、設計方針ドキュメントやコーディング規約を置く
+5. Copilot Chat を開き、エージェントモードで `/proceed _profile` を実行する（⓪プロジェクト把握）
    → 人が `work/_profile/⓪プロファイル確認.md` と `knowledge/` の2ファイルを確認 → `python tools/gate.py approve _profile profile`
 
 ## 進め方（おすすめ）：進行役に任せる
@@ -102,7 +101,9 @@ AI 同士のレビューが NG なら作成役に直させ（最大2往復）、
 | `.github/hooks/` | ワークスペース全体のフック |
 | `.github/copilot-instructions.md` | 全エージェント共通の原則 |
 | `tools/` | 補助スクリプト（ゲート、形式チェック、書き込み制限、設計書の抽出、指標） |
-| `templates/` | 指示書、テスト観点、ワークスペースファイルのひな形 |
+| `templates/` | 指示書、テスト観点のひな形 |
+| `dev-agents.code-workspace` | VS Code のワークスペースファイル。対象PJのソースルートはここに書く |
+| `config/project.md` | 調査の対象外にするフォルダ |
 | `docs/` | 使い方ガイド |
 
 ## Claude Code 版からの変更点
@@ -118,5 +119,6 @@ AI 同士のレビューが NG なら作成役に直させ（最大2往復）、
 | （なし） | 進行役（`/proceed`）と `gate.py next`／`gate.py cancel` |
 
 ## リポジトリで管理するときの注意
-- `work/`、`input/` の中身、PJ 固有のナレッジ（`project_profile.md`、`common_components.md`、`metrics.csv`）、ワークスペースファイルは `.gitignore` で除外しています
+- `work/`、`input/` の中身、PJ 固有のナレッジ（`project_profile.md`、`common_components.md`、`metrics.csv`）は `.gitignore` で除外しています
+- `dev-agents.code-workspace` は、ひな形（`<PJ名>` のまま）の状態で管理しています。ソースルートを書いた後のファイルはコミットしないでください
 - `knowledge/` のほかのファイル（qa_log.md など）や `.github/steps/*/checklist.md` も、使ううちに PJ の情報が追記されます。公開リポジトリには、使い始める前の状態だけを置いてください
