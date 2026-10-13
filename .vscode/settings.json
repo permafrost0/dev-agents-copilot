@@ -1,0 +1,13 @@
+{
+  // フック（書き込み制限・形式チェック）を有効にする（既定でも有効）
+  "chat.useHooks": true,
+  // Claude Code 形式のフック（.claude/settings.json）は読まない
+  "chat.useClaudeHooks": false,
+  // .github/copilot-instructions.md を全チャットに適用する
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  // エージェントが実行する tools/ のスクリプトは確認なしで実行する（承認・差し戻し・やり直しは対象外）
+  "chat.tools.terminal.autoApprove": {
+    "/^(& )?python3? (\\.[\\\\/])?tools[\\\\/]gate\\.py (check|status|next)\\b/": true,
+    "/^(& )?python3? (\\.[\\\\/])?tools[\\\\/](check_artifact|xlsx_dump|metrics)\\.py\\b/": true
+  }
+}

@@ -1,0 +1,20 @@
+# 作業成果物（機能ごとの文書・状態）
+work/*
+!work/.gitkeep
+
+# 設計書・設計方針（業務の資料はリポジトリに入れない）
+input/設計書/*
+!input/設計書/.gitkeep
+input/設計方針/*
+!input/設計方針/.gitkeep
+
+# PJ 固有のナレッジ（/project-profile と metrics.py が作る）
+knowledge/project_profile.md
+knowledge/common_components.md
+knowledge/metrics.csv
+
+# ワークスペースファイル（ソースルートのパスを含む）
+/*.code-workspace
+
+__pycache__/
+*.pyc
